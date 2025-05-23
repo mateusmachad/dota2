@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Torneio 1v1 Mid Dota 2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .tournament-bracket {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .round {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .match {
+            background-color: #1a202c;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 5px 0;
+            width: 100%;
+            max-width: 300px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border-left: 4px solid #d946ef;
+        }
+        .player-card {
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        }
+        .player-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
+        }
+        .winner {
+            border: 2px solid #f59e0b;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 70, 239, 0.2) 100%);
+        }
+        .dota-bg {
+            background-image: url('https://images.contentstack.io/v3/assets/blt731acb42bb3d1659/blt6e2e0e8a7a6c1b5e/5eb26d544e86b60e8b4d5f3d/Dota2_KeyArt_2020.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-blend-mode: overlay;
+            background-color: rgba(10, 10, 20, 0.9);
+        }
+        .hero-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 8px;
+            border: 1px solid #4a5568;
+        }
+        @media (min-width: 768px) {
+            .tournament-bracket {
+                flex-direction: row;
+                align-items: flex-start;
+                justify-content: center;
+            }
+            .round {
+                width: auto;
+                margin: 0 15px;
+            }
+        }
+    </style>
+</head>
+<body class="dota-bg text-white min-h-screen">
+<div class="container mx-auto px-4 py-8">
+    <header class="text-center mb-12">
+        <div class="flex justify-center items-center mb-4">
+            <img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/global/dota2_logo_symbol.png" alt="Dota 2 Logo" class="h-16 mr-4">
+            <h1 class="text-4xl font-bold text-purple-400 mb-2">Torneio 1v1 Mid</h1>
+        </div>
+        <p class="text-gray-400">Prove que você é o melhor midlaner da partida!</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div class="bg-gray-800 rounded-lg p-6 shadow-lg border border-purple-900">
+            <h2 class="text-2xl font-semibold text-purple-400 mb-4 flex items-center">
+                <i class="fas fa-user-plus mr-2"></i> Adicionar Jogador
+            </h2>
+            <form id="addPlayerForm" class="space-y-4">
+                <input type="text" id="playerName" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Nome do Jogador" required>
+                <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-2 px-4 rounded-md transition duration-300 flex items-center justify-center">
+                    <i class="fas fa-plus-circle mr-2"></i> Adicionar
+                </button>
+            </form>
+            <hr class="my-4 border-gray-700">
+            <h2 class="text-2xl font-semibold text-purple-400 mb-4 flex items-center">
+                <i class="fas fa-users mr-2"></i> Jogadores Cadastrados
+            </h2>
+            <div id="playersList" class="space-y-3 max-h-96 overflow-y-auto pr-2"></div>
+            <div class="mt-4">
+                <button id="clearPlayers" class="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded flex items-center justify-center">
+                    <i class="fas fa-user-slash mr-2"></i> Limpar Jogadores
+                </button>
+                <button id="exportPlayers" class="w-full mt-2 bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded flex items-center justify-center">
+                    <i class="fas fa-download mr-2"></i> Exportar Lista
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-gray-800 rounded-lg p-6 shadow-lg border border-purple-900">
+            <h2 class="text-2xl font-semibold text-purple-400 mb-4 flex items-center">
+                <i class="fas fa-random mr-2"></i> Controle do Torneio
+            </h2>
+            <div class="space-y-3">
+                <button id="generateBracket" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-2 px-4 rounded-md transition duration-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fas fa-random mr-2"></i> Sortear Chaves
+                </button>
+                <button id="resetAll" class="w-full bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white font-bold py-2 px-4 rounded-md transition duration-300 flex items-center justify-center">
+                    <i class="fas fa-trash-alt mr-2"></i> Reiniciar Torneio
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-gray-800 rounded-lg p-6 shadow-lg border border-purple-900">
+            <h2 class="text-2xl font-semibold text-purple-400 mb-4 flex items-center">
+                <i class="fas fa-trophy mr-2"></i> Chaves do Torneio
+            </h2>
+            <div id="tournamentContainer" class="tournament-bracket">
+                <p class="text-gray-500 italic text-center py-8">As chaves do torneio aparecerão aqui após o sorteio</p>
+            </div>
+            <div class="mt-4 space-y-2">
+                <button id="prevRound" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fas fa-arrow-left mr-1"></i> Voltar Rodada
+                </button>
+                <button id="nextRound" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed">
+                    Avançar Rodada <i class="fas fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<audio id="audio-toast" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" preload="auto"></audio>
+<audio id="audio-toast" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" preload="auto"></audio>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let players = JSON.parse(localStorage.getItem('dotaPlayers')) || [];
+    let tournament = [];
+    let currentRound = 0;
+
+    const playersList = document.getElementById('playersList');
+    const clearPlayersBtn = document.getElementById('clearPlayers');
+    const exportPlayersBtn = document.getElementById('exportPlayers');
+    const generateBracketBtn = document.getElementById('generateBracket');
+    const resetAllBtn = document.getElementById('resetAll');
+    const tournamentContainer = document.getElementById('tournamentContainer');
+    const prevRoundBtn = document.getElementById('prevRound');
+    const nextRoundBtn = document.getElementById('nextRound');
+    const addPlayerForm = document.getElementById('addPlayerForm');
+    const playerNameInput = document.getElementById('playerName');
+
+    function showToast(message) {
+        const audio = document.getElementById('audio-toast');
+        audio.currentTime = 0;
+        audio.play();
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-4 right-4 bg-purple-600 text-white px-4 py-2 rounded shadow-lg animate-bounce';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => { toast.remove(); }, 3000);
+    }
+
+    addPlayerForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const name = playerNameInput.value.trim();
+        if (name.length < 3) {
+            showToast('Nome muito curto!');
+            return;
+        }
+        players.push({ name });
+        savePlayers();
+        updatePlayersList();
+        playerNameInput.value = '';
+        showToast('Jogador adicionado com sucesso!');
+    });
+
+    clearPlayersBtn.addEventListener('click', () => {
+        if (confirm('Tem certeza que quer remover todos os jogadores?')) {
+            players = [];
+            savePlayers();
+            updatePlayersList();
+            resetTournament();
+            showToast('Todos os jogadores foram removidos!');
+        }
+    });
+
+    exportPlayersBtn.addEventListener('click', () => {
+        const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(players));
+        const dlAnchor = document.createElement('a');
+        dlAnchor.setAttribute('href', dataStr);
+        dlAnchor.setAttribute('download', 'jogadores_dota2.json');
+        dlAnchor.click();
+    });
+
+    generateBracketBtn.addEventListener('click', () => {
+        if (players.length < 2) {
+            alert('Cadastre pelo menos 2 jogadores.');
+            return;
+        }
+        tournament = createBracket(players);
+        currentRound = 0;
+        renderTournament();
+        showToast('Chaves do torneio sorteadas!');
+    });
+
+    resetAllBtn.addEventListener('click', () => {
+        if (confirm('Tem certeza que deseja reiniciar o torneio?')) {
+            resetTournament();
+            showToast('Torneio reiniciado!');
+        }
+    });
+
+    prevRoundBtn.addEventListener('click', () => {
+        if (currentRound > 0) {
+            currentRound--;
+            renderTournament();
+        }
+    });
+
+    nextRoundBtn.addEventListener('click', () => {
+        if (currentRound < tournament.length - 1) {
+            currentRound++;
+            renderTournament();
+        } else {
+            showToast('Torneio finalizado!');
+        }
+    });
+
+    function updatePlayersList() {
+        playersList.innerHTML = '';
+        players.forEach((player, index) => {
+            const div = document.createElement('div');
+            div.className = 'player-card rounded-md p-4 flex justify-between items-center';
+            div.innerHTML = `<span>${player.name}</span><button aria-label="Remover jogador" class="text-red-500 hover:text-red-400" data-index="${index}"><i class="fas fa-times"></i></button>`;
+            playersList.appendChild(div);
+        });
+
+        document.querySelectorAll('.player-card button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = btn.dataset.index;
+                if (confirm(`Remover ${players[idx].name}?`)) {
+                    players.splice(idx, 1);
+                    savePlayers();
+                    updatePlayersList();
+                    showToast('Jogador removido com sucesso!');
+                }
+            });
+        });
+
+        generateBracketBtn.disabled = players.length < 2;
+    }
+
+    function savePlayers() {
+        localStorage.setItem('dotaPlayers', JSON.stringify(players));
+    }
+
+    function createBracket(list) {
+        const shuffled = [...list].sort(() => Math.random() - 0.5);
+        const rounds = [];
+
+        let matches = [];
+        for (let i = 0; i < shuffled.length; i += 2) {
+            matches.push({
+                player1: shuffled[i],
+                player2: shuffled[i + 1] || null,
+                winner: null
+            });
+        }
+        rounds.push(matches);
+
+        let nextRoundPlayers = matches.length;
+        while (nextRoundPlayers > 1) {
+            nextRoundPlayers = Math.ceil(nextRoundPlayers / 2);
+            const nextMatches = [];
+            for (let i = 0; i < nextRoundPlayers; i++) {
+                nextMatches.push({ player1: null, player2: null, winner: null });
+            }
+            rounds.push(nextMatches);
+        }
+
+        return rounds;
+    }
+
+    function renderTournament() {
+        tournamentContainer.innerHTML = '';
+        if (!tournament.length) return;
+
+        const round = tournament[currentRound];
+
+        round.forEach((match, idx) => {
+            const div = document.createElement('div');
+            div.className = 'match';
+            div.innerHTML = `<p>${match.player1.name}</p>${match.player2 ? `<p>${match.player2.name}</p>` : '<p>Avança direto</p>'}
+                ${!match.winner ? `<button class='bg-green-600 hover:bg-green-700 py-1 px-2 rounded text-sm' data-idx='${idx}' data-player='1'>${match.player1.name}</button>
+                ${match.player2 ? `<button class='bg-green-600 hover:bg-green-700 py-1 px-2 rounded text-sm' data-idx='${idx}' data-player='2'>${match.player2.name}</button>` : ''}` : `<p class='winner mt-2'>Vencedor: ${match.winner.name}</p>`}`;
+
+            tournamentContainer.appendChild(div);
+        });
+
+        tournamentContainer.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = btn.dataset.idx;
+                const player = btn.dataset.player;
+                const match = tournament[currentRound][idx];
+                match.winner = player == 1 ? match.player1 : match.player2;
+
+                if (tournament.length > currentRound + 1) {
+                    const nextRound = tournament[currentRound + 1];
+                    const nextIndex = Math.floor(idx / 2);
+                    if (!nextRound[nextIndex].player1) {
+                        nextRound[nextIndex].player1 = match.winner;
+                    } else {
+                        nextRound[nextIndex].player2 = match.winner;
+                    }
+                }
+
+                renderTournament();
+                showToast('Vencedor da partida selecionado!');
+            });
+        });
+    }
+
+    function resetTournament() {
+        tournament = [];
+        currentRound = 0;
+        tournamentContainer.innerHTML = '<p class="text-gray-500 italic text-center py-8">As chaves do torneio aparecerão aqui após o sorteio</p>';
+    }
+
+    updatePlayersList();
+});
+</script>
+</body>
+</html>
