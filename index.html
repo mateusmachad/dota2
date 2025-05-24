@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Torneio 1v1 Mid Dota 2</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com">function closeChampionScreen() {
+    document.getElementById('championScreen').classList.add('hidden');
+}
+</script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .tournament-bracket {
@@ -67,6 +70,34 @@
                 width: auto;
                 margin: 0 15px;
             }
+        }
+    .champion-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 50;
+            color: #fff;
+            font-size: 2rem;
+            text-align: center;
+        }
+        .champion-screen h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #facc15;
+        }
+        .champion-screen button {
+            background: linear-gradient(to right, #6366f1, #ec4899);
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            font-size: 1.25rem;
         }
     </style>
 </head>
@@ -137,8 +168,11 @@
             </div>
         </div>
     </div>
+<div id="championScreen" class="champion-screen hidden">
+    <h1>Campeão!</h1>
+    <p id="championName"></p>
+    <button onclick="closeChampionScreen()">Fechar</button>
 </div>
-
 <audio id="audio-toast" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" preload="auto"></audio>
 <audio id="audio-toast" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" preload="auto"></audio>
 <script>
@@ -291,51 +325,60 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderTournament() {
-        tournamentContainer.innerHTML = '';
-        if (!tournament.length) return;
+    tournamentContainer.innerHTML = '';
+    if (!tournament.length) return;
 
-        const round = tournament[currentRound];
+    const isFinalRound = currentRound === tournament.length - 1;
+    const round = tournament[currentRound];
 
-        round.forEach((match, idx) => {
-            const div = document.createElement('div');
-            div.className = 'match';
-            div.innerHTML = `<p>${match.player1.name}</p>${match.player2 ? `<p>${match.player2.name}</p>` : '<p>Avança direto</p>'}
-                ${!match.winner ? `<button class='bg-green-600 hover:bg-green-700 py-1 px-2 rounded text-sm' data-idx='${idx}' data-player='1'>${match.player1.name}</button>
-                ${match.player2 ? `<button class='bg-green-600 hover:bg-green-700 py-1 px-2 rounded text-sm' data-idx='${idx}' data-player='2'>${match.player2.name}</button>` : ''}` : `<p class='winner mt-2'>Vencedor: ${match.winner.name}</p>`}`;
+    if (isFinalRound && round.length === 1 && round[0].winner) {
+        document.getElementById('championName').innerText = round[0].winner.name;
+        document.getElementById('championScreen').classList.remove('hidden');
+        return;
+    }
 
-            tournamentContainer.appendChild(div);
-        });
+    round.forEach((match, idx) => {
+        const div = document.createElement('div');
+        div.className = 'match';
 
-        tournamentContainer.querySelectorAll('button').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const idx = btn.dataset.idx;
-                const player = btn.dataset.player;
-                const match = tournament[currentRound][idx];
-                match.winner = player == 1 ? match.player1 : match.player2;
+        let matchHTML = `<p>${match.player1.name}</p>`;
+        matchHTML += match.player2 ? `<p>${match.player2.name}</p>` : '<p>Avança direto</p>';
 
-                if (tournament.length > currentRound + 1) {
-                    const nextRound = tournament[currentRound + 1];
-                    const nextIndex = Math.floor(idx / 2);
-                    if (!nextRound[nextIndex].player1) {
-                        nextRound[nextIndex].player1 = match.winner;
-                    } else {
-                        nextRound[nextIndex].player2 = match.winner;
-                    }
+        if (!match.winner) {
+            matchHTML += `<button class='bg-green-600 hover:bg-green-700 py-1 px-2 rounded text-sm m-1' data-idx='${idx}' data-player='1'>${match.player1.name}</button>`;
+            if (match.player2) {
+                matchHTML += `<button class='bg-green-600 hover:bg-green-700 py-1 px-2 rounded text-sm m-1' data-idx='${idx}' data-player='2'>${match.player2.name}</button>`;
+            }
+        } else {
+            matchHTML += `<p class='winner mt-2'>Vencedor: ${match.winner.name}</p>`;
+        }
+
+        div.innerHTML = matchHTML;
+        tournamentContainer.appendChild(div);
+    });
+
+    tournamentContainer.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const idx = btn.dataset.idx;
+            const player = btn.dataset.player;
+            const match = tournament[currentRound][idx];
+            match.winner = player == 1 ? match.player1 : match.player2;
+
+            if (tournament.length > currentRound + 1) {
+                const nextRound = tournament[currentRound + 1];
+                const nextIndex = Math.floor(idx / 2);
+                if (!nextRound[nextIndex].player1) {
+                    nextRound[nextIndex].player1 = match.winner;
+                } else {
+                    nextRound[nextIndex].player2 = match.winner;
                 }
+            }
 
-                renderTournament();
-                showToast('Vencedor da partida selecionado!');
-            });
+            renderTournament();
+            showToast('Vencedor da partida selecionado!');
         });
-    }
-
-    function resetTournament() {
-        tournament = [];
-        currentRound = 0;
-        tournamentContainer.innerHTML = '<p class="text-gray-500 italic text-center py-8">As chaves do torneio aparecerão aqui após o sorteio</p>';
-    }
-
-    updatePlayersList();
+    });
+}
 });
 </script>
 </body>
